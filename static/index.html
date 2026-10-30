@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Receipts — check that your sources say what you say</title>
+  <meta name="description" content="Receipts reads every source a document cites and shows, sentence by sentence, whether the source really says that. Powered by NVIDIA Nemotron on Nebius Token Factory and Tavily.">
+  <link rel="preload" href="/static/fonts/newsreader-latin-opsz-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M7 3h18v24l-3-2-3 2-3-2-3 2-3-2-3 2z' fill='%2318223A'/%3E%3Cpath d='M11 10h10M11 14h10M11 18h6' stroke='%23fff' stroke-width='2'/%3E%3C/svg%3E">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Receipts home">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M7 3h18v24l-3-2-3 2-3-2-3 2-3-2-3 2z"/><path class="brand-lines" d="M11 10h10M11 14h10M11 18h6"/></svg>
+      <span>Receipts</span>
+    </a>
+    <div class="doc-title" id="docTitle" hidden></div>
+    <div class="topbar-actions">
+      <span class="mode-pill" id="modePill" hidden></span>
+      <button class="btn ghost" id="howBtn" type="button">How it works</button>
+      <button class="btn ghost" id="exportBtn" type="button" hidden>Export report</button>
+      <button class="btn" id="newBtn" type="button" hidden>New check</button>
+    </div>
+  </header>
+
+  <div class="banner" id="banner" role="status" hidden></div>
+
+  <main id="main">
+    <!-- Start: paste or pick a sample -->
+    <section class="start" id="start" aria-labelledby="startTitle">
+      <div class="start-copy">
+        <h1 id="startTitle">Does the source actually say that?</h1>
+        <p class="lede">Paste a brief, paper, essay or AI-written report. Receipts finds every sentence that cites a source, reads the source, and shows you what it really says.</p>
+      </div>
+
+      <div class="start-grid">
+        <form class="paste" id="pasteForm">
+          <label class="visually-hidden" for="input">Document text or link</label>
+          <div class="drop" id="drop">
+            <textarea id="input" spellcheck="false" placeholder="Paste text here, paste a link to an article, or drop a PDF, DOCX or TXT file."></textarea>
+            <div class="drop-hint" aria-hidden="true">Drop the file to check it</div>
+          </div>
+          <div class="paste-row">
+            <button class="btn primary" id="checkBtn" type="submit">Check citations</button>
+            <label class="btn ghost file-btn">
+              <input type="file" id="fileInput" accept=".pdf,.docx,.txt,.md" class="visually-hidden">
+              <span>Upload a file</span>
+            </label>
+            <span class="count" id="charCount"></span>
+          </div>
+        </form>
+
+        <aside class="samples" aria-labelledby="samplesTitle">
+          <h2 id="samplesTitle">Or try a sample</h2>
+          <p class="samples-note">Each one mixes accurate, distorted and invented citations.</p>
+          <div id="sampleList" class="sample-list"></div>
+        </aside>
+      </div>
+
+      <ol class="pipeline" aria-label="How a check runs">
+        <li><span class="who nano">Nemotron 3 Nano</span> finds every claim that cites a source</li>
+        <li><span class="who tavily">Tavily</span> searches for each source and reads the relevant passages</li>
+        <li><span class="who super">Nemotron 3 Super</span> compares each claim with what the source says</li>
+        <li><span class="who ultra">Nemotron 3 Ultra</span> double-checks risky verdicts and writes the report</li>
+      </ol>
+    </section>
+
+    <!-- Review: document + receipt + findings -->
+    <section class="review" id="review" hidden>
+      <div class="desk">
+        <div class="progress" id="progress" role="status" aria-live="polite"></div>
+        <section class="note" id="note" aria-label="Reviewer's note" hidden></section>
+        <article class="sheet" id="sheet" aria-label="Document with checked citations"></article>
+      </div>
+
+      <aside class="rail" aria-label="Findings">
+        <div class="receipt" id="receipt" aria-label="Summary receipt">
+          <div class="receipt-paper">
+            <div class="r-head">
+              <div class="r-name">RECEIPTS</div>
+              <div class="r-sub">Citation check</div>
+              <div class="r-meta" id="rMeta"></div>
+            </div>
+            <div class="r-rule"></div>
+            <ol class="r-items" id="rItems"></ol>
+            <div class="r-rule"></div>
+            <div class="r-totals" id="rTotals"></div>
+            <div class="r-stampline" id="rStamp"></div>
+          </div>
+        </div>
+
+        <div class="tabs" role="tablist" aria-label="Findings views">
+          <button role="tab" id="tabFindings" aria-selected="true" aria-controls="panelFindings" type="button">Findings <span class="tab-count" id="findCount"></span></button>
+          <button role="tab" id="tabTrace" aria-selected="false" aria-controls="panelTrace" type="button" tabindex="-1">How it was checked</button>
+        </div>
+
+        <div role="tabpanel" id="panelFindings" aria-labelledby="tabFindings">
+          <div class="filters" role="group" aria-label="Filter findings">
+            <button type="button" class="chip active" data-filter="all">All</button>
+            <button type="button" class="chip" data-filter="problems">Problems</button>
+            <button type="button" class="chip" data-filter="supported">Supported</button>
+          </div>
+          <p class="kbd-hint">Use <kbd>J</kbd> and <kbd>K</kbd> to move between findings.</p>
+          <div class="cards" id="cards"></div>
+        </div>
+
+        <div role="tabpanel" id="panelTrace" aria-labelledby="tabTrace" hidden>
+          <div class="roles" id="roles"></div>
+          <ol class="trace" id="trace"></ol>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <dialog class="how" id="howDialog" aria-labelledby="howTitle">
+    <form method="dialog">
+      <h2 id="howTitle">How Receipts checks a document</h2>
+      <ol class="how-steps">
+        <li><strong>Find the claims.</strong> Nemotron 3 Nano reads the document and pulls out every sentence that relies on a specific source, resolving numbered and author-year references against the bibliography.</li>
+        <li><strong>Find and read the source.</strong> Links are read with Tavily Extract, reranked to the claim so only the relevant passages come back. Cases, papers and books are located with Tavily Search, and Nano decides which result is the cited source itself.</li>
+        <li><strong>Judge.</strong> Nemotron 3 Super compares the claim with the source passages and must copy the exact sentences its verdict rests on.</li>
+        <li><strong>Verify the evidence.</strong> Receipts checks that every quoted sentence really appears in the source. Quotes the model can't ground lower its confidence.</li>
+        <li><strong>Second opinion.</strong> Anything flagged, low-confidence or ungrounded goes to Nemotron 3 Ultra, which can overturn the first verdict. Ultra also writes the summary.</li>
+      </ol>
+      <h3>What the verdicts mean</h3>
+      <dl class="legend">
+        <div><dt><span class="v-dot v-supported"></span>Supported</dt><dd>The source says what the document says.</dd></div>
+        <div><dt><span class="v-dot v-partial"></span>Partly supported</dt><dd>The document overstates it or drops a qualifier.</dd></div>
+        <div><dt><span class="v-dot v-misrepresented"></span>Misrepresented</dt><dd>Right source, wrong details: a number, holding or quote.</dd></div>
+        <div><dt><span class="v-dot v-contradicted"></span>Contradicted</dt><dd>The source says the opposite.</dd></div>
+        <div><dt><span class="v-dot v-not_found"></span>Not found</dt><dd>No copy of the source exists online. Possibly invented.</dd></div>
+        <div><dt><span class="v-dot v-unverifiable"></span>Can't verify</dt><dd>The source couldn't be read (paywall, offline, print-only).</dd></div>
+      </dl>
+      <p class="how-limits"><strong>Limits.</strong> Receipts gives evidence, not a ruling. Print-only books and paywalled articles often come back as "Can't verify", and a "Not found" can also mean a badly formatted citation. Always open the source before acting on a flag.</p>
+      <button class="btn primary" value="close">Got it</button>
+    </form>
+  </dialog>
+
+  <div class="visually-hidden" aria-live="polite" id="announcer"></div>
+  <script src="/static/app.js" defer></script>
+</body>
+</html>
