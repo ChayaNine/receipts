@@ -15,7 +15,7 @@ Receipts reads every sentence that cites a source (a link, a court case, a statu
 
 Click any highlighted sentence to see the exact passage from the source, a rewrite the source does support, and which model made the call.
 
-- **Live demo:** `<add your Hugging Face Space URL>`
+- **Live demo:** `<https://receipts-o2zp.onrender.com>`
 - **Demo video (under 3 minutes):** `<add your YouTube URL>`
 - **Built for:** the Nebius x NVIDIA Global AI Hackathon, Best Apps and Agents track
 
